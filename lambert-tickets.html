@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1208">
+<title>Lambert Tickets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root {
+  --cream: #faf6ee;
+  --cream2: #f3ede0;
+  --gold: #b8860b;
+  --gold2: #d4a017;
+  --gold-light: #f0d080;
+  --dark: #1a1208;
+  --dark2: #2d2010;
+  --text: #2d2010;
+  --text2: #5a4a2a;
+  --text3: #8a7a5a;
+  --border: rgba(90,74,42,0.15);
+  --border2: rgba(90,74,42,0.3);
+  --white: #ffffff;
+  --success: #2d6a4f;
+  --danger: #9b2226;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --r: 12px;
+  --r-sm: 8px;
+  --shadow: 0 2px 16px rgba(26,18,8,0.08);
+  --shadow2: 0 4px 32px rgba(26,18,8,0.14);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--cream); font-family: var(--font-body); color: var(--text); overflow: hidden; }
+
+/* ── APP SHELL ── */
+#app { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+#screen-container { flex: 1; overflow: hidden; position: relative; }
+.screen { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; background: var(--cream); display: none; flex-direction: column; }
+.screen.active { display: flex; }
+
+/* ── TOP BAR ── */
+.topbar { display: flex; align-items: center; padding: 16px 20px 12px; background: var(--dark); color: var(--cream); position: sticky; top: 0; z-index: 100; }
+.topbar-title { font-family: var(--font-display); font-size: 22px; font-weight: 500; letter-spacing: 0.02em; flex: 1; }
+.topbar-sub { font-size: 11px; color: var(--gold2); letter-spacing: 0.08em; text-transform: uppercase; display: block; }
+.topbar-back { background: none; border: none; color: var(--cream); font-size: 20px; padding: 4px 12px 4px 0; cursor: pointer; opacity: 0.8; }
+.topbar-action { background: none; border: 1px solid rgba(212,160,23,0.4); color: var(--gold2); font-family: var(--font-body); font-size: 13px; padding: 6px 14px; border-radius: 20px; cursor: pointer; white-space: nowrap; }
+.topbar-action:active { opacity: 0.7; }
+
+/* ── BOTTOM NAV ── */
+#bottom-nav { background: var(--dark); display: flex; border-top: 1px solid rgba(212,160,23,0.2); padding-bottom: env(safe-area-inset-bottom, 8px); }
+.nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 4px 6px; cursor: pointer; border: none; background: none; color: rgba(250,246,238,0.4); transition: color 0.2s; gap: 3px; }
+.nav-btn.active { color: var(--gold2); }
+.nav-icon { font-size: 20px; line-height: 1; }
+.nav-label { font-size: 10px; letter-spacing: 0.04em; }
+
+/* ── DASHBOARD ── */
+.dashboard-hero { background: linear-gradient(160deg, var(--dark) 0%, var(--dark2) 100%); color: var(--cream); padding: 28px 24px 36px; position: relative; overflow: hidden; }
+.dashboard-hero::before { content: ''; position: absolute; right: -20px; top: -20px; width: 180px; height: 180px; border-radius: 50%; border: 40px solid rgba(212,160,23,0.06); }
+.business-name { font-family: var(--font-display); font-size: 32px; font-weight: 400; letter-spacing: 0.01em; line-height: 1.1; }
+.business-tagline { font-size: 12px; color: var(--gold2); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px; }
+.dashboard-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0 0; }
+.stat-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(212,160,23,0.2); border-radius: var(--r-sm); padding: 14px; }
+.stat-value { font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--gold-light); }
+.stat-label { font-size: 11px; color: rgba(250,246,238,0.5); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 2px; }
+
+.new-order-btn { margin: -20px 20px 0; position: relative; z-index: 10; background: var(--gold); color: var(--dark); border: none; border-radius: var(--r); padding: 18px 24px; font-family: var(--font-body); font-size: 16px; font-weight: 600; cursor: pointer; width: calc(100% - 40px); display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: var(--shadow2); letter-spacing: 0.02em; transition: transform 0.15s; }
+.new-order-btn:active { transform: scale(0.98); }
+
+.quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 20px; }
+.quick-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--r); padding: 18px 16px; cursor: pointer; display: flex; flex-direction: column; gap: 8px; transition: transform 0.15s, box-shadow 0.15s; }
+.quick-card:active { transform: scale(0.97); box-shadow: var(--shadow); }
+.quick-card-icon { font-size: 28px; }
+.quick-card-label { font-size: 13px; font-weight: 500; color: var(--text); }
+.quick-card-sub { font-size: 11px; color: var(--text3); }
+
+.section-title { font-family: var(--font-display); font-size: 20px; font-weight: 500; color: var(--text); padding: 20px 20px 8px; letter-spacing: 0.01em; }
+
+/* ── PRODUCTS ── */
+.search-bar { margin: 12px 20px; position: relative; }
+.search-bar input { width: 100%; background: var(--white); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px 16px 12px 40px; font-family: var(--font-body); font-size: 14px; color: var(--text); outline: none; }
+.search-bar input:focus { border-color: var(--gold); }
+.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 16px; }
+
+.category-chips { display: flex; gap: 8px; padding: 4px 20px 12px; overflow-x: auto; scrollbar-width: none; }
+.category-chips::-webkit-scrollbar { display: none; }
+.chip { background: var(--white); border: 1px solid var(--border); border-radius: 20px; padding: 6px 14px; font-size: 12px; white-space: nowrap; cursor: pointer; color: var(--text2); transition: all 0.15s; }
+.chip.active { background: var(--dark); color: var(--cream); border-color: var(--dark); }
+
+.product-list { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 10px; }
+.product-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: transform 0.1s; }
+.product-card:active { transform: scale(0.99); }
+.product-emoji { width: 48px; height: 48px; background: var(--cream2); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; }
+.product-info { flex: 1; min-width: 0; }
+.product-name { font-size: 14px; font-weight: 500; color: var(--text); }
+.product-cat { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+.product-price { font-family: var(--font-display); font-size: 18px; font-weight: 600; color: var(--gold); }
+.product-unit { font-size: 11px; color: var(--text3); }
+.product-type-badge { font-size: 10px; background: var(--cream2); color: var(--text2); padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 3px; }
+
+.fab { position: fixed; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); right: 20px; width: 56px; height: 56px; background: var(--gold); border: none; border-radius: 50%; color: var(--dark); font-size: 24px; cursor: pointer; box-shadow: var(--shadow2); display: flex; align-items: center; justify-content: center; z-index: 50; transition: transform 0.15s; }
+.fab:active { transform: scale(0.93); }
+
+/* ── MODAL ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(26,18,8,0.5); z-index: 200; display: none; align-items: flex-end; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--cream); border-radius: var(--r) var(--r) 0 0; width: 100%; max-height: 90vh; overflow-y: auto; padding: 24px 20px 40px; }
+.modal-handle { width: 40px; height: 4px; background: var(--border2); border-radius: 2px; margin: 0 auto 20px; }
+.modal-title { font-family: var(--font-display); font-size: 24px; font-weight: 500; margin-bottom: 20px; }
+
+/* ── FORM ── */
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 12px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; display: block; }
+.form-input { width: 100%; background: var(--white); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px 14px; font-family: var(--font-body); font-size: 15px; color: var(--text); outline: none; }
+.form-input:focus { border-color: var(--gold); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a4a2a' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+
+.btn { border: none; border-radius: var(--r-sm); padding: 14px 20px; font-family: var(--font-body); font-size: 15px; font-weight: 500; cursor: pointer; width: 100%; transition: transform 0.15s, opacity 0.15s; }
+.btn:active { transform: scale(0.98); opacity: 0.9; }
+.btn-primary { background: var(--dark); color: var(--cream); }
+.btn-gold { background: var(--gold); color: var(--dark); }
+.btn-outline { background: transparent; border: 1px solid var(--border2); color: var(--text); }
+.btn-danger { background: transparent; border: 1px solid rgba(155,34,38,0.3); color: var(--danger); }
+.btn-sm { padding: 8px 16px; font-size: 13px; width: auto; }
+.btn-row { display: flex; gap: 10px; margin-top: 16px; }
+
+/* ── ORDER BUILDER ── */
+.order-summary-bar { background: var(--dark); color: var(--cream); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.order-total-big { font-family: var(--font-display); font-size: 28px; font-weight: 500; color: var(--gold2); }
+.order-item-count { font-size: 12px; color: rgba(250,246,238,0.6); }
+
+.order-items { padding: 0 20px; }
+.order-item { background: var(--white); border: 1px solid var(--border); border-radius: var(--r); padding: 14px; margin-bottom: 10px; }
+.order-item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.order-item-name { font-size: 14px; font-weight: 500; }
+.order-item-subtotal { font-family: var(--font-display); font-size: 18px; font-weight: 600; color: var(--gold); }
+.order-item-controls { display: flex; align-items: center; gap: 10px; }
+.qty-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border2); background: var(--cream2); color: var(--text); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.qty-input { width: 70px; text-align: center; border: 1px solid var(--border); border-radius: var(--r-sm); padding: 6px; font-size: 14px; font-family: var(--font-body); background: var(--cream); }
+.unit-toggle { display: flex; background: var(--cream2); border-radius: var(--r-sm); overflow: hidden; }
+.unit-btn { padding: 5px 10px; font-size: 12px; border: none; background: none; cursor: pointer; color: var(--text2); }
+.unit-btn.active { background: var(--dark); color: var(--cream); }
+.remove-item { background: none; border: none; color: var(--text3); font-size: 18px; cursor: pointer; padding: 2px 6px; }
+
+.add-product-section { padding: 16px 20px; }
+
+/* ── TICKET PREVIEW ── */
+#ticket-paper { background: white; font-family: var(--font-display); color: #1a1208; max-width: 400px; margin: 0 auto; padding: 32px 28px; }
+.ticket-logo-area { text-align: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(26,18,8,0.1); }
+.ticket-business { font-size: 28px; font-weight: 600; letter-spacing: 0.02em; }
+.ticket-tagline { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #5a4a2a; margin-top: 4px; }
+.ticket-meta { display: flex; justify-content: space-between; margin-bottom: 16px; font-family: var(--font-body); }
+.ticket-meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #8a7a5a; }
+.ticket-meta-value { font-size: 13px; font-weight: 500; }
+.ticket-client-block { background: #faf6ee; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; font-family: var(--font-body); }
+.ticket-client-name { font-size: 15px; font-weight: 600; }
+.ticket-client-info { font-size: 12px; color: #5a4a2a; margin-top: 2px; }
+.ticket-divider { border: none; border-top: 1px dashed rgba(26,18,8,0.15); margin: 14px 0; }
+.ticket-items-header { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; font-family: var(--font-body); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #8a7a5a; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid rgba(26,18,8,0.1); }
+.ticket-item-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; font-family: var(--font-body); font-size: 13px; padding: 6px 0; border-bottom: 1px solid rgba(26,18,8,0.05); align-items: center; }
+.ticket-item-qty { color: #5a4a2a; font-size: 12px; text-align: right; }
+.ticket-item-price { text-align: right; font-weight: 500; }
+.ticket-total-block { margin-top: 16px; text-align: right; }
+.ticket-total-label { font-size: 12px; color: #5a4a2a; text-transform: uppercase; letter-spacing: 0.06em; }
+.ticket-total-amount { font-size: 36px; font-weight: 600; color: #b8860b; line-height: 1; margin-top: 4px; }
+.ticket-notes { font-family: var(--font-body); font-size: 12px; color: #5a4a2a; font-style: italic; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(26,18,8,0.1); }
+.ticket-thanks { text-align: center; margin-top: 24px; font-size: 14px; color: #5a4a2a; font-style: italic; }
+.ticket-footer { text-align: center; margin-top: 12px; font-family: var(--font-body); font-size: 10px; color: #8a7a5a; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* ── HISTORY ── */
+.order-history-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; margin: 0 20px 10px; cursor: pointer; }
+.order-history-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.order-history-client { font-size: 15px; font-weight: 500; }
+.order-history-total { font-family: var(--font-display); font-size: 20px; font-weight: 600; color: var(--gold); }
+.order-history-date { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.order-history-items { font-size: 12px; color: var(--text2); margin-top: 6px; }
+
+/* ── CLIENTS ── */
+.client-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; margin: 0 20px 10px; display: flex; align-items: center; gap: 14px; cursor: pointer; }
+.client-avatar { width: 44px; height: 44px; background: var(--cream2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 18px; font-weight: 500; color: var(--gold); flex-shrink: 0; }
+.client-name { font-size: 14px; font-weight: 500; }
+.client-info { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.client-orders { font-size: 11px; color: var(--gold); font-weight: 500; margin-top: 3px; }
+
+/* ── CONFIG ── */
+.config-section { margin: 0 20px 20px; }
+.config-item { background: var(--white); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.config-item-label { font-size: 14px; font-weight: 500; }
+.config-item-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.config-chevron { color: var(--text3); font-size: 18px; }
+.toggle { width: 44px; height: 26px; background: var(--border2); border-radius: 13px; position: relative; cursor: pointer; transition: background 0.2s; }
+.toggle.on { background: var(--gold); }
+.toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform 0.2s; }
+.toggle.on::after { transform: translateX(18px); }
+
+/* ── SHARE BUTTONS ── */
+.share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.share-btn { background: var(--white); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 12px; text-align: center; cursor: pointer; transition: transform 0.1s; }
+.share-btn:active { transform: scale(0.97); }
+.share-btn-icon { font-size: 28px; margin-bottom: 6px; }
+.share-btn-label { font-size: 12px; color: var(--text2); font-weight: 500; }
+.whatsapp-btn { background: #25D366; border-color: #25D366; }
+.whatsapp-btn .share-btn-icon, .whatsapp-btn .share-btn-label { color: white; }
+
+/* ── EMPTY STATE ── */
+.empty-state { text-align: center; padding: 60px 40px; }
+.empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+.empty-title { font-family: var(--font-display); font-size: 22px; color: var(--text2); margin-bottom: 8px; }
+.empty-sub { font-size: 13px; color: var(--text3); line-height: 1.6; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--dark); color: var(--cream); padding: 12px 20px; border-radius: 24px; font-size: 13px; opacity: 0; transition: all 0.3s; z-index: 999; white-space: nowrap; pointer-events: none; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── PDF hidden ── */
+#ticket-render-area { position: absolute; left: -9999px; top: 0; width: 400px; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="screen-container">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="screen active" id="screen-home">
+      <div class="dashboard-hero">
+        <div class="business-name" id="hero-name">Lambert</div>
+        <div class="business-tagline" id="hero-tagline">Cremería Artesanal</div>
+        <div class="dashboard-stats">
+          <div class="stat-card">
+            <div class="stat-value" id="stat-today">$0</div>
+            <div class="stat-label">Hoy</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-orders">0</div>
+            <div class="stat-label">Pedidos</div>
+          </div>
+        </div>
+      </div>
+      <button class="new-order-btn" onclick="startNewOrder()">
+        <span style="font-size:20px">＋</span> Nuevo Pedido
+      </button>
+      <div class="quick-grid">
+        <div class="quick-card" onclick="navTo('products')">
+          <div class="quick-card-icon">🧀</div>
+          <div class="quick-card-label">Catálogo</div>
+          <div class="quick-card-sub" id="stat-products">0 productos</div>
+        </div>
+        <div class="quick-card" onclick="navTo('history')">
+          <div class="quick-card-icon">📋</div>
+          <div class="quick-card-label">Historial</div>
+          <div class="quick-card-sub" id="stat-hist">0 pedidos</div>
+        </div>
+        <div class="quick-card" onclick="navTo('clients')">
+          <div class="quick-card-icon">👥</div>
+          <div class="quick-card-label">Clientes</div>
+          <div class="quick-card-sub" id="stat-clients">0 clientes</div>
+        </div>
+        <div class="quick-card" onclick="navTo('config')">
+          <div class="quick-card-icon">⚙️</div>
+          <div class="quick-card-label">Ajustes</div>
+          <div class="quick-card-sub">Personalizar</div>
+        </div>
+      </div>
+      <div class="section-title">Pedidos Recientes</div>
+      <div id="recent-orders-list" style="padding:0 20px 100px"></div>
+    </div>
+
+    <!-- ══ PRODUCTS ══ -->
+    <div class="screen" id="screen-products">
+      <div class="topbar">
+        <button class="topbar-back" onclick="navTo('home')">‹</button>
+        <div>
+          <span class="topbar-title">Catálogo</span>
+          <span class="topbar-sub">Productos</span>
+        </div>
+        <button class="topbar-action" onclick="openProductModal()">+ Agregar</button>
+      </div>
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Buscar producto..." id="product-search" oninput="filterProducts()">
+      </div>
+      <div class="category-chips" id="category-chips"></div>
+      <div class="product-list" id="product-list" style="padding-bottom:100px"></div>
+    </div>
+
+    <!-- ══ ORDER BUILDER ══ -->
+    <div class="screen" id="screen-order">
+      <div class="order-summary-bar">
+        <div>
+          <div class="order-item-count" id="order-item-count">0 productos</div>
+          <div class="order-total-big" id="order-total-display">$0.00</div>
+        </div>
+        <button class="topbar-action" onclick="openClientModal()" style="border-color:rgba(212,160,23,0.6)">
+          Cliente →
+        </button>
+      </div>
+
+      <!-- Client quick info -->
+      <div id="order-client-bar" style="display:none; background:var(--cream2); padding:10px 20px; border-bottom:1px solid var(--border);">
+        <span style="font-size:13px; font-weight:500;" id="order-client-name-bar">—</span>
+        <span style="font-size:11px; color:var(--text3); margin-left:8px;" id="order-client-phone-bar"></span>
+        <button onclick="openClientModal()" style="float:right;background:none;border:none;color:var(--gold);font-size:12px;cursor:pointer;">Editar</button>
+      </div>
+
+      <div style="padding:14px 20px 8px; display:flex; align-items:center; justify-content:space-between;">
+        <span style="font-size:13px; font-weight:500; color:var(--text2);">Productos del pedido</span>
+        <button onclick="openAddProduct()" style="background:var(--cream2);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;color:var(--text);">+ Agregar</button>
+      </div>
+
+      <div class="order-items" id="order-items-list"></div>
+
+      <div id="order-empty" class="empty-state" style="padding:40px 40px">
+        <div class="empty-icon">🛒</div>
+        <div class="empty-title">Pedido vacío</div>
+        <div class="empty-sub">Agrega productos para comenzar</div>
+        <button class="btn btn-gold" style="margin-top:16px;width:auto;padding:12px 24px" onclick="openAddProduct()">+ Agregar producto</button>
+      </div>
+
+      <div id="order-notes-section" style="padding:0 20px 20px; display:none;">
+        <div class="form-group">
+          <label class="form-label">Notas del pedido</label>
+          <textarea class="form-input" id="order-notes" rows="2" placeholder="Instrucciones especiales..."></textarea>
+        </div>
+      </div>
+
+      <div id="order-actions" style="padding:16px 20px 100px; display:none; flex-direction:column; gap:10px;">
+        <button class="btn btn-gold" onclick="generateTicket()">🧾 Generar Ticket</button>
+        <button class="btn btn-outline" onclick="cancelOrder()">Cancelar pedido</button>
+      </div>
+    </div>
+
+    <!-- ══ HISTORY ══ -->
+    <div class="screen" id="screen-history">
+      <div class="topbar">
+        <button class="topbar-back" onclick="navTo('home')">‹</button>
+        <div>
+          <span class="topbar-title">Historial</span>
+          <span class="topbar-sub">Pedidos guardados</span>
+        </div>
+        <button class="topbar-action" onclick="exportCSV()">Exportar</button>
+      </div>
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Buscar pedido o cliente..." id="history-search" oninput="filterHistory()">
+      </div>
+      <div id="history-list" style="padding:8px 0 100px"></div>
+    </div>
+
+    <!-- ══ CLIENTS ══ -->
+    <div class="screen" id="screen-clients">
+      <div class="topbar">
+        <button class="topbar-back" onclick="navTo('home')">‹</button>
+        <div>
+          <span class="topbar-title">Clientes</span>
+          <span class="topbar-sub">Directorio</span>
+        </div>
+      </div>
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Buscar cliente..." id="client-search" oninput="filterClients()">
+      </div>
+      <div id="clients-list" style="padding:8px 0 100px"></div>
+    </div>
+
+    <!-- ══ CONFIG ══ -->
+    <div class="screen" id="screen-config">
+      <div class="topbar">
+        <button class="topbar-back" onclick="navTo('home')">‹</button>
+        <div>
+          <span class="topbar-title">Configuración</span>
+        </div>
+      </div>
+      <div style="padding:16px 20px 0">
+        <div class="form-group">
+          <label class="form-label">Nombre del negocio</label>
+          <input type="text" class="form-input" id="cfg-name" placeholder="Lambert Cremería">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Eslogan / Descripción</label>
+          <input type="text" class="form-input" id="cfg-tagline" placeholder="Cremería Artesanal">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mensaje de agradecimiento</label>
+          <textarea class="form-input" id="cfg-thanks" rows="2" placeholder="¡Gracias por su preferencia!"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Moneda</label>
+          <select class="form-input form-select" id="cfg-currency">
+            <option value="$">$ MXN — Peso Mexicano</option>
+            <option value="USD$">USD$ — Dólar</option>
+            <option value="€">€ — Euro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teléfono del negocio</label>
+          <input type="tel" class="form-input" id="cfg-phone" placeholder="+52 81 1234 5678">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Logo / Emoji del negocio</label>
+          <input type="text" class="form-input" id="cfg-logo" placeholder="🧀" maxlength="4">
+        </div>
+        <button class="btn btn-primary" onclick="saveConfig()" style="margin-bottom:16px">Guardar cambios</button>
+        <hr style="border:none;border-top:1px solid var(--border);margin-bottom:16px">
+        <button class="btn btn-outline" onclick="exportCSV()" style="margin-bottom:10px">📊 Exportar pedidos a CSV</button>
+        <button class="btn btn-danger" onclick="confirmClearAll()">⚠ Borrar todos los datos</button>
+      </div>
+    </div>
+
+    <!-- ══ TICKET VIEW ══ -->
+    <div class="screen" id="screen-ticket">
+      <div class="topbar">
+        <button class="topbar-back" onclick="navTo('home')">‹</button>
+        <div>
+          <span class="topbar-title">Ticket Listo</span>
+          <span class="topbar-sub">Compartir o guardar</span>
+        </div>
+      </div>
+      <div style="padding:16px 20px 0">
+        <div id="ticket-preview-container" style="background:white;border-radius:var(--r);overflow:hidden;border:1px solid var(--border);margin-bottom:16px;"></div>
+        <div class="share-grid">
+          <div class="share-btn whatsapp-btn" onclick="shareWhatsApp()">
+            <div class="share-btn-icon">📲</div>
+            <div class="share-btn-label">WhatsApp</div>
+          </div>
+          <div class="share-btn" onclick="downloadPDF()">
+            <div class="share-btn-icon">📄</div>
+            <div class="share-btn-label">Guardar PDF</div>
+          </div>
+          <div class="share-btn" onclick="shareImage()">
+            <div class="share-btn-icon">🖼️</div>
+            <div class="share-btn-label">Imagen</div>
+          </div>
+          <div class="share-btn" onclick="copyToClipboard()">
+            <div class="share-btn-icon">📋</div>
+            <div class="share-btn-label">Copiar texto</div>
+          </div>
+        </div>
+        <div style="margin-top:12px; padding-bottom:100px">
+          <button class="btn btn-outline" onclick="repeatOrder()">🔄 Repetir este pedido</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /screen-container -->
+
+  <!-- ══ BOTTOM NAV ══ -->
+  <nav id="bottom-nav">
+    <button class="nav-btn active" id="nav-home" onclick="navTo('home')">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">Inicio</div>
+    </button>
+    <button class="nav-btn" id="nav-order" onclick="navTo('order')">
+      <div class="nav-icon">🛒</div>
+      <div class="nav-label">Pedido</div>
+    </button>
+    <button class="nav-btn" id="nav-history" onclick="navTo('history')">
+      <div class="nav-icon">📋</div>
+      <div class="nav-label">Historial</div>
+    </button>
+    <button class="nav-btn" id="nav-clients" onclick="navTo('clients')">
+      <div class="nav-icon">👥</div>
+      <div class="nav-label">Clientes</div>
+    </button>
+  </nav>
+</div>
+
+<!-- ══ MODALS ══ -->
+
+<!-- Product Modal -->
+<div class="modal-overlay" id="modal-product">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-product-title">Nuevo Producto</div>
+    <input type="hidden" id="edit-product-id">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nombre *</label>
+        <input type="text" class="form-input" id="p-name" placeholder="Queso Panela">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Categoría</label>
+        <input type="text" class="form-input" id="p-cat" placeholder="Quesos" list="cat-datalist">
+        <datalist id="cat-datalist"></datalist>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Precio *</label>
+        <input type="number" class="form-input" id="p-price" placeholder="180.00" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tipo de venta</label>
+        <select class="form-input form-select" id="p-type">
+          <option value="kg">Por kilogramo</option>
+          <option value="pieza">Por pieza</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">SKU (opcional)</label>
+        <input type="text" class="form-input" id="p-sku" placeholder="QP-001">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Emoji/Ícono</label>
+        <input type="text" class="form-input" id="p-emoji" placeholder="🧀" maxlength="4">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveProduct()">Guardar</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-product')">Cancelar</button>
+    </div>
+    <div id="delete-product-btn" style="margin-top:10px; display:none">
+      <button class="btn btn-danger" onclick="deleteProduct()">Eliminar producto</button>
+    </div>
+  </div>
+</div>
+
+<!-- Client Modal -->
+<div class="modal-overlay" id="modal-client">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Datos del Cliente</div>
+    <div class="form-group">
+      <label class="form-label">Nombre *</label>
+      <input type="text" class="form-input" id="c-name" placeholder="María García">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Teléfono</label>
+        <input type="tel" class="form-input" id="c-phone" placeholder="+52 81...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Referencia</label>
+        <input type="text" class="form-input" id="c-ref" placeholder="Casa azul">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Dirección</label>
+      <input type="text" class="form-input" id="c-address" placeholder="Calle y número...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Link Google Maps (opcional)</label>
+      <input type="url" class="form-input" id="c-maps" placeholder="https://maps.google.com/...">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveClient()">Confirmar</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-client')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Product to Order Modal -->
+<div class="modal-overlay" id="modal-add-product">
+  <div class="modal" style="max-height:85vh">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Agregar al Pedido</div>
+    <div class="search-bar" style="margin:0 0 12px">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Buscar..." id="add-product-search" oninput="filterAddProducts()">
+    </div>
+    <div id="add-product-list" style="max-height:50vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- Order Detail Modal -->
+<div class="modal-overlay" id="modal-order-detail">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div id="order-detail-content"></div>
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn btn-gold" onclick="viewTicketFromHistory()">Ver Ticket</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-order-detail')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden PDF render area -->
+<div id="ticket-render-area">
+  <div id="ticket-paper"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// DATA LAYER — localStorage
+// ══════════════════════════════════════════
+const DB = {
+  get: (k) => { try { return JSON.parse(localStorage.getItem('lt_'+k) || 'null'); } catch(e){return null;} },
+  set: (k,v) => localStorage.setItem('lt_'+k, JSON.stringify(v)),
+  del: (k) => localStorage.removeItem('lt_'+k)
+};
+
+let products = DB.get('products') || [];
+let orders = DB.get('orders') || [];
+let clients = DB.get('clients') || [];
+let config = DB.get('config') || {
+  name: 'Lambert',
+  tagline: 'Cremería Artesanal',
+  thanks: '¡Gracias por su preferencia! Vuelva pronto 🧀',
+  currency: '$',
+  phone: '',
+  logo: '🧀'
+};
+
+let currentOrder = { items: [], client: null, notes: '' };
+let currentTicketOrder = null;
+let editingProductId = null;
+let viewingHistoryOrder = null;
+let filterCat = 'all';
+
+// ══ SEED PRODUCTS ══
+if(products.length === 0) {
+  products = [
+    {id:'p1', name:'Queso Panela', cat:'Quesos', price:180, type:'kg', emoji:'🧀', sku:'QP-001'},
+    {id:'p2', name:'Crema 1/2 litro', cat:'Cremas', price:42, type:'pieza', emoji:'🥛', sku:'CR-001'},
+    {id:'p3', name:'Queso de Borona', cat:'Quesos', price:160, type:'kg', emoji:'🧀', sku:'QB-001'},
+    {id:'p4', name:'Galletas de agua', cat:'Panadería', price:28, type:'pieza', emoji:'🍪', sku:'GA-001'},
+    {id:'p5', name:'Queso Oaxaca', cat:'Quesos', price:200, type:'kg', emoji:'🧀', sku:'QO-001'},
+    {id:'p6', name:'Crema agria', cat:'Cremas', price:38, type:'pieza', emoji:'🥣', sku:'CA-001'},
+    {id:'p7', name:'Requesón', cat:'Quesos', price:90, type:'kg', emoji:'🫙', sku:'RQ-001'},
+    {id:'p8', name:'Mantequilla', cat:'Lácteos', price:65, type:'pieza', emoji:'🧈', sku:'MT-001'},
+  ];
+  DB.set('products', products);
+}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function navTo(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const s = document.getElementById('screen-'+screen);
+  if(s) s.classList.add('active');
+  const nb = document.getElementById('nav-'+screen);
+  if(nb) nb.classList.add('active');
+  // refresh screens
+  if(screen==='home') refreshHome();
+  if(screen==='products') renderProducts();
+  if(screen==='history') renderHistory();
+  if(screen==='clients') renderClients();
+  if(screen==='order') refreshOrderScreen();
+  if(screen==='config') loadConfig();
+}
+
+// ══════════════════════════════════════════
+// HOME
+// ══════════════════════════════════════════
+function refreshHome() {
+  const today = new Date().toDateString();
+  const todayOrders = orders.filter(o => new Date(o.date).toDateString() === today);
+  const todayTotal = todayOrders.reduce((s,o) => s+o.total, 0);
+  document.getElementById('stat-today').textContent = fmt(todayTotal);
+  document.getElementById('stat-orders').textContent = todayOrders.length;
+  document.getElementById('stat-products').textContent = products.length + ' productos';
+  document.getElementById('stat-hist').textContent = orders.length + ' pedidos';
+  document.getElementById('stat-clients').textContent = clients.length + ' clientes';
+  document.getElementById('hero-name').textContent = config.name;
+  document.getElementById('hero-tagline').textContent = config.tagline;
+  // Recent orders
+  const el = document.getElementById('recent-orders-list');
+  const recent = [...orders].sort((a,b)=>b.date-a.date).slice(0,4);
+  if(!recent.length) { el.innerHTML = '<div class="empty-state" style="padding:30px"><div class="empty-icon">📦</div><div class="empty-title">Sin pedidos aún</div></div>'; return; }
+  el.innerHTML = recent.map(o => `
+    <div class="order-history-card" style="margin:0 0 10px" onclick="openOrderDetail('${o.id}')">
+      <div class="order-history-top">
+        <div>
+          <div class="order-history-client">${o.client?.name || 'Sin cliente'}</div>
+          <div class="order-history-date">${fmtDate(o.date)}</div>
+        </div>
+        <div class="order-history-total">${fmt(o.total)}</div>
+      </div>
+      <div class="order-history-items">${o.items.map(i=>i.name).join(' · ')}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// PRODUCTS
+// ══════════════════════════════════════════
+function getCategories() {
+  return ['all', ...new Set(products.map(p=>p.cat).filter(Boolean))];
+}
+
+function renderProducts() {
+  const cats = getCategories();
+  const chipEl = document.getElementById('category-chips');
+  chipEl.innerHTML = cats.map(c => `<div class="chip ${filterCat===c?'active':''}" onclick="setCat('${c}')">${c==='all'?'Todos':c}</div>`).join('');
+  // datalist
+  const dl = document.getElementById('cat-datalist');
+  if(dl) dl.innerHTML = cats.filter(c=>c!=='all').map(c=>`<option value="${c}">`).join('');
+  filterProducts();
+}
+
+function setCat(cat) { filterCat = cat; renderProducts(); }
+
+function filterProducts() {
+  const q = (document.getElementById('product-search')?.value||'').toLowerCase();
+  let list = products;
+  if(filterCat !== 'all') list = list.filter(p=>p.cat===filterCat);
+  if(q) list = list.filter(p=>p.name.toLowerCase().includes(q)||(p.cat||'').toLowerCase().includes(q));
+  const el = document.getElementById('product-list');
+  if(!list.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">🧀</div><div class="empty-title">Sin productos</div></div>'; return; }
+  el.innerHTML = list.map(p=>`
+    <div class="product-card" onclick="openProductModal('${p.id}')">
+      <div class="product-emoji">${p.emoji||'🧀'}</div>
+      <div class="product-info">
+        <div class="product-cat">${p.cat||''}</div>
+        <div class="product-name">${p.name}</div>
+        <div class="product-type-badge">${p.type==='kg'?'Por kg':'Por pieza'}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div class="product-price">${config.currency}${p.price.toFixed(2)}</div>
+        <div class="product-unit">/${p.type==='kg'?'kg':'pza'}</div>
+      </div>
+    </div>`).join('');
+}
+
+function openProductModal(id) {
+  editingProductId = id||null;
+  const modal = document.getElementById('modal-product');
+  const titleEl = document.getElementById('modal-product-title');
+  if(id) {
+    const p = products.find(x=>x.id===id);
+    if(!p) return;
+    document.getElementById('p-name').value = p.name;
+    document.getElementById('p-cat').value = p.cat||'';
+    document.getElementById('p-price').value = p.price;
+    document.getElementById('p-type').value = p.type;
+    document.getElementById('p-sku').value = p.sku||'';
+    document.getElementById('p-emoji').value = p.emoji||'';
+    titleEl.textContent = 'Editar Producto';
+    document.getElementById('delete-product-btn').style.display='block';
+  } else {
+    document.getElementById('p-name').value='';
+    document.getElementById('p-cat').value='';
+    document.getElementById('p-price').value='';
+    document.getElementById('p-type').value='kg';
+    document.getElementById('p-sku').value='';
+    document.getElementById('p-emoji').value='🧀';
+    titleEl.textContent = 'Nuevo Producto';
+    document.getElementById('delete-product-btn').style.display='none';
+  }
+  modal.classList.add('open');
+}
+
+function saveProduct() {
+  const name = document.getElementById('p-name').value.trim();
+  const price = parseFloat(document.getElementById('p-price').value);
+  if(!name||isNaN(price)) { showToast('Completa nombre y precio'); return; }
+  const data = {
+    name, price,
+    cat: document.getElementById('p-cat').value.trim(),
+    type: document.getElementById('p-type').value,
+    sku: document.getElementById('p-sku').value.trim(),
+    emoji: document.getElementById('p-emoji').value.trim()||'🧀',
+  };
+  if(editingProductId) {
+    const idx = products.findIndex(p=>p.id===editingProductId);
+    products[idx] = {...products[idx], ...data};
+  } else {
+    products.push({id:'p'+Date.now(), ...data});
+  }
+  DB.set('products', products);
+  closeModal('modal-product');
+  renderProducts();
+  showToast('Producto guardado ✓');
+}
+
+function deleteProduct() {
+  if(!editingProductId) return;
+  if(!confirm('¿Eliminar este producto?')) return;
+  products = products.filter(p=>p.id!==editingProductId);
+  DB.set('products', products);
+  closeModal('modal-product');
+  renderProducts();
+  showToast('Producto eliminado');
+}
+
+// ══════════════════════════════════════════
+// ORDER BUILDER
+// ══════════════════════════════════════════
+function startNewOrder() {
+  currentOrder = { items:[], client:null, notes:'' };
+  navTo('order');
+}
+
+function refreshOrderScreen() {
+  const items = currentOrder.items;
+  const total = items.reduce((s,i)=>s+i.subtotal,0);
+  document.getElementById('order-total-display').textContent = fmt(total);
+  document.getElementById('order-item-count').textContent = items.length + (items.length===1?' producto':' productos');
+  const listEl = document.getElementById('order-items-list');
+  const emptyEl = document.getElementById('order-empty');
+  const actionsEl = document.getElementById('order-actions');
+  const notesEl = document.getElementById('order-notes-section');
+  if(!items.length) {
+    listEl.innerHTML=''; emptyEl.style.display='flex'; actionsEl.style.display='none'; notesEl.style.display='none';
+  } else {
+    emptyEl.style.display='none'; actionsEl.style.display='flex'; notesEl.style.display='block';
+    listEl.innerHTML = items.map((item,idx) => buildOrderItemHTML(item,idx)).join('');
+  }
+  // client bar
+  if(currentOrder.client?.name) {
+    document.getElementById('order-client-bar').style.display='block';
+    document.getElementById('order-client-name-bar').textContent = currentOrder.client.name;
+    document.getElementById('order-client-phone-bar').textContent = currentOrder.client.phone||'';
+  } else {
+    document.getElementById('order-client-bar').style.display='none';
+  }
+}
+
+function buildOrderItemHTML(item, idx) {
+  const isKg = item.type==='kg';
+  return `
+  <div class="order-item">
+    <div class="order-item-header">
+      <div class="order-item-name">${item.emoji||''} ${item.name}</div>
+      <button class="remove-item" onclick="removeOrderItem(${idx})">✕</button>
+    </div>
+    <div class="order-item-controls">
+      ${isKg ? `
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+            <input type="number" class="qty-input" value="${item.rawQty}" min="0" step="0.001"
+              onchange="updateItemQty(${idx},this.value,'${item.unit||'g'}')" style="width:80px">
+            <div class="unit-toggle">
+              <button class="unit-btn ${item.unit==='g'?'active':''}" onclick="setItemUnit(${idx},'g')">g</button>
+              <button class="unit-btn ${item.unit==='kg'?'active':''}" onclick="setItemUnit(${idx},'kg')">kg</button>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text3)">${item.unit==='g'?item.rawQty+'g = '+item.qty.toFixed(3)+'kg':item.qty.toFixed(3)+'kg'} × ${config.currency}${item.price.toFixed(2)}/kg</div>
+        </div>
+      ` : `
+        <div style="flex:1;display:flex;align-items:center;gap:8px">
+          <button class="qty-btn" onclick="changeQty(${idx},-1)">−</button>
+          <input type="number" class="qty-input" value="${item.qty}" min="0"
+            onchange="updateItemQty(${idx},this.value,'pieza')" style="width:60px">
+          <button class="qty-btn" onclick="changeQty(${idx},1)">+</button>
+          <span style="font-size:11px;color:var(--text3)">× ${config.currency}${item.price.toFixed(2)}</span>
+        </div>
+      `}
+      <div class="order-item-subtotal">${fmt(item.subtotal)}</div>
+    </div>
+  </div>`;
+}
+
+function updateItemQty(idx, val, unit) {
+  const item = currentOrder.items[idx];
+  val = parseFloat(val)||0;
+  if(item.type==='kg') {
+    item.unit = unit;
+    item.rawQty = val;
+    item.qty = unit==='g' ? val/1000 : val;
+  } else {
+    item.qty = val;
+  }
+  item.subtotal = item.price * item.qty;
+  DB.set('currentOrder', currentOrder);
+  refreshOrderScreen();
+}
+
+function setItemUnit(idx, unit) {
+  const item = currentOrder.items[idx];
+  if(item.type!=='kg') return;
+  // convert rawQty
+  if(unit==='kg' && item.unit==='g') { item.rawQty = item.rawQty/1000; }
+  if(unit==='g' && item.unit==='kg') { item.rawQty = item.rawQty*1000; }
+  item.unit = unit;
+  item.qty = unit==='g' ? item.rawQty/1000 : item.rawQty;
+  item.subtotal = item.price * item.qty;
+  refreshOrderScreen();
+}
+
+function changeQty(idx, delta) {
+  const item = currentOrder.items[idx];
+  item.qty = Math.max(0, item.qty+delta);
+  item.subtotal = item.price*item.qty;
+  refreshOrderScreen();
+}
+
+function removeOrderItem(idx) {
+  currentOrder.items.splice(idx,1);
+  refreshOrderScreen();
+}
+
+function openAddProduct() {
+  document.getElementById('add-product-search').value='';
+  filterAddProducts();
+  document.getElementById('modal-add-product').classList.add('open');
+}
+
+function filterAddProducts() {
+  const q = (document.getElementById('add-product-search')?.value||'').toLowerCase();
+  let list = products;
+  if(q) list = list.filter(p=>p.name.toLowerCase().includes(q));
+  const el = document.getElementById('add-product-list');
+  el.innerHTML = list.map(p=>`
+    <div class="product-card" style="margin-bottom:8px" onclick="addProductToOrder('${p.id}')">
+      <div class="product-emoji" style="width:40px;height:40px;font-size:22px">${p.emoji||'🧀'}</div>
+      <div class="product-info">
+        <div class="product-name">${p.name}</div>
+        <div class="product-type-badge">${p.type==='kg'?'Por kg':'Por pieza'}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div class="product-price" style="font-size:16px">${config.currency}${p.price.toFixed(2)}</div>
+        <div class="product-unit" style="font-size:10px">/${p.type==='kg'?'kg':'pza'}</div>
+      </div>
+    </div>`).join('') || '<div class="empty-state" style="padding:20px"><div class="empty-title">Sin resultados</div></div>';
+}
+
+function addProductToOrder(pid) {
+  const p = products.find(x=>x.id===pid);
+  if(!p) return;
+  const existing = currentOrder.items.find(i=>i.productId===pid);
+  if(existing) {
+    if(existing.type==='pieza') { existing.qty++; existing.subtotal=existing.price*existing.qty; }
+    else { existing.rawQty += (existing.unit==='g'?100:0.1); existing.qty=existing.unit==='g'?existing.rawQty/1000:existing.rawQty; existing.subtotal=existing.price*existing.qty; }
+  } else {
+    currentOrder.items.push({
+      productId:p.id, name:p.name, emoji:p.emoji, price:p.price, type:p.type, cat:p.cat,
+      qty: p.type==='kg'?0:1, rawQty:p.type==='kg'?0:1, unit:p.type==='kg'?'g':'pieza',
+      subtotal:p.type==='kg'?0:p.price
+    });
+  }
+  closeModal('modal-add-product');
+  refreshOrderScreen();
+  showToast(p.name+' agregado ✓');
+}
+
+// ══ CLIENT ══
+function openClientModal() {
+  const c = currentOrder.client||{};
+  document.getElementById('c-name').value = c.name||'';
+  document.getElementById('c-phone').value = c.phone||'';
+  document.getElementById('c-address').value = c.address||'';
+  document.getElementById('c-ref').value = c.ref||'';
+  document.getElementById('c-maps').value = c.maps||'';
+  document.getElementById('modal-client').classList.add('open');
+}
+
+function saveClient() {
+  const name = document.getElementById('c-name').value.trim();
+  if(!name) { showToast('Ingresa el nombre del cliente'); return; }
+  currentOrder.client = {
+    name, phone:document.getElementById('c-phone').value.trim(),
+    address:document.getElementById('c-address').value.trim(),
+    ref:document.getElementById('c-ref').value.trim(),
+    maps:document.getElementById('c-maps').value.trim()
+  };
+  // Save/update client in directory
+  const existing = clients.find(c=>c.name.toLowerCase()===name.toLowerCase());
+  if(!existing) {
+    clients.push({id:'cl'+Date.now(),...currentOrder.client, orders:0});
+    DB.set('clients',clients);
+  }
+  closeModal('modal-client');
+  refreshOrderScreen();
+  showToast('Cliente asignado ✓');
+}
+
+function cancelOrder() {
+  if(!confirm('¿Cancelar pedido actual?')) return;
+  currentOrder = {items:[],client:null,notes:''};
+  navTo('home');
+}
+
+// ══════════════════════════════════════════
+// TICKET GENERATION
+// ══════════════════════════════════════════
+function generateTicket() {
+  if(!currentOrder.items.length) { showToast('Agrega productos primero'); return; }
+  currentOrder.notes = document.getElementById('order-notes')?.value||'';
+  const total = currentOrder.items.reduce((s,i)=>s+i.subtotal,0);
+  const order = {
+    id: 'ord'+Date.now(),
+    date: Date.now(),
+    client: currentOrder.client,
+    items: currentOrder.items.map(i=>({...i})),
+    notes: currentOrder.notes,
+    total
+  };
+  orders.unshift(order);
+  DB.set('orders', orders);
+  // update client order count
+  if(order.client?.name) {
+    const c = clients.find(x=>x.name.toLowerCase()===order.client.name.toLowerCase());
+    if(c) { c.orders=(c.orders||0)+1; DB.set('clients',clients); }
+  }
+  currentTicketOrder = order;
+  viewingHistoryOrder = order;
+  renderTicket(order);
+  navTo('ticket');
+  currentOrder = {items:[],client:null,notes:''};
+}
+
+function buildTicketHTML(order) {
+  const c = order.client||{};
+  const now = new Date(order.date);
+  const dateStr = now.toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+  const timeStr = now.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+  const itemsHTML = order.items.map(i=>`
+    <div class="ticket-item-row">
+      <div>${i.emoji||''} ${i.name}</div>
+      <div class="ticket-item-qty">${i.type==='kg'?(i.qty*1000).toFixed(0)+'g':i.qty+'pza'}</div>
+      <div class="ticket-item-price">${config.currency}${i.subtotal.toFixed(2)}</div>
+    </div>`).join('');
+  return `
+    <div class="ticket-logo-area">
+      <div style="font-size:40px;margin-bottom:6px">${config.logo}</div>
+      <div class="ticket-business">${config.name}</div>
+      <div class="ticket-tagline">${config.tagline}</div>
+    </div>
+    <div class="ticket-meta" style="font-family:'DM Sans',sans-serif">
+      <div><div class="ticket-meta-label">Fecha</div><div class="ticket-meta-value">${dateStr}</div></div>
+      <div style="text-align:right"><div class="ticket-meta-label">Hora</div><div class="ticket-meta-value">${timeStr}</div></div>
+    </div>
+    ${c.name?`<div class="ticket-client-block">
+      <div class="ticket-client-name">👤 ${c.name}</div>
+      ${c.phone?`<div class="ticket-client-info">📞 ${c.phone}</div>`:''}
+      ${c.address?`<div class="ticket-client-info">📍 ${c.address}${c.ref?' ('+c.ref+')':''}</div>`:''}
+    </div>`:''}
+    <div class="ticket-items-header">
+      <span>Producto</span><span>Cant.</span><span>Total</span>
+    </div>
+    ${itemsHTML}
+    <hr class="ticket-divider">
+    <div class="ticket-total-block">
+      <div class="ticket-total-label">Total a pagar</div>
+      <div class="ticket-total-amount">${config.currency}${order.total.toFixed(2)}</div>
+    </div>
+    ${order.notes?`<div class="ticket-notes">📝 ${order.notes}</div>`:''}
+    <div class="ticket-thanks">${config.thanks}</div>
+    <div class="ticket-footer" style="margin-top:16px">${config.phone||''}</div>
+    <div class="ticket-footer" style="margin-top:4px">Pedido #${order.id.slice(-6).toUpperCase()}</div>`;
+}
+
+function renderTicket(order) {
+  const html = buildTicketHTML(order);
+  document.getElementById('ticket-preview-container').innerHTML = `<div id="ticket-paper" style="padding:24px 20px;font-family:'Cormorant Garamond',serif;background:white;color:#1a1208">${html}</div>`;
+  document.getElementById('ticket-paper').innerHTML = html;
+}
+
+// ══ SHARE ══
+async function downloadPDF() {
+  showToast('Generando PDF...');
+  try {
+    const el = document.getElementById('ticket-paper');
+    const canvas = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#ffffff'});
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({orientation:'portrait',unit:'px',format:[canvas.width/2, canvas.height/2]});
+    pdf.addImage(canvas.toDataURL('image/jpeg',0.95), 'JPEG', 0,0, canvas.width/2, canvas.height/2);
+    const fname = `ticket-${currentTicketOrder?.id?.slice(-6)||'lambert'}.pdf`;
+    pdf.save(fname);
+    showToast('PDF guardado ✓');
+  } catch(e) { showToast('Error al generar PDF'); console.error(e); }
+}
+
+async function shareImage() {
+  showToast('Preparando imagen...');
+  try {
+    const el = document.getElementById('ticket-paper');
+    const canvas = await html2canvas(el, {scale:2, backgroundColor:'#ffffff'});
+    canvas.toBlob(async blob => {
+      if(navigator.share && navigator.canShare({files:[new File([blob],'ticket.png',{type:'image/png'})]})) {
+        await navigator.share({files:[new File([blob],'ticket.png',{type:'image/png'})], title:config.name+' — Ticket'});
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href=url; a.download='ticket-lambert.png'; a.click();
+        showToast('Imagen descargada');
+      }
+    },'image/png');
+  } catch(e) { showToast('Error al generar imagen'); }
+}
+
+function shareWhatsApp() {
+  const o = currentTicketOrder||viewingHistoryOrder;
+  if(!o) return;
+  const text = buildWhatsAppText(o);
+  const phone = o.client?.phone ? o.client.phone.replace(/\D/g,'') : '';
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
+}
+
+function buildWhatsAppText(order) {
+  const c = order.client||{};
+  const date = new Date(order.date).toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+  let txt = `*${config.name}*\n_${config.tagline}_\n\n`;
+  txt += `📅 ${date}\n`;
+  if(c.name) txt += `👤 Cliente: ${c.name}\n`;
+  if(c.phone) txt += `📞 ${c.phone}\n`;
+  if(c.address) txt += `📍 ${c.address}\n`;
+  txt += `\n*─── PEDIDO ───*\n`;
+  order.items.forEach(i=>{
+    const qty = i.type==='kg' ? `${(i.qty*1000).toFixed(0)}g` : `${i.qty} pza`;
+    txt += `• ${i.name}: ${qty} = *${config.currency}${i.subtotal.toFixed(2)}*\n`;
+  });
+  txt += `\n*TOTAL: ${config.currency}${order.total.toFixed(2)}*\n`;
+  if(order.notes) txt += `\n📝 ${order.notes}\n`;
+  txt += `\n_${config.thanks}_`;
+  return txt;
+}
+
+function copyToClipboard() {
+  const o = currentTicketOrder||viewingHistoryOrder;
+  if(!o) return;
+  navigator.clipboard?.writeText(buildWhatsAppText(o)).then(()=>showToast('Copiado al portapapeles ✓')).catch(()=>showToast('No se pudo copiar'));
+}
+
+function repeatOrder() {
+  const o = viewingHistoryOrder;
+  if(!o) return;
+  currentOrder = {items:o.items.map(i=>({...i})), client:o.client?{...o.client}:null, notes:''};
+  navTo('order');
+  showToast('Pedido cargado para repetir');
+}
+
+// ══════════════════════════════════════════
+// HISTORY
+// ══════════════════════════════════════════
+function renderHistory() {
+  filterHistory();
+}
+
+function filterHistory() {
+  const q = (document.getElementById('history-search')?.value||'').toLowerCase();
+  let list = [...orders].sort((a,b)=>b.date-a.date);
+  if(q) list = list.filter(o=>(o.client?.name||'').toLowerCase().includes(q)||(o.items||[]).some(i=>i.name.toLowerCase().includes(q)));
+  const el = document.getElementById('history-list');
+  if(!list.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Sin pedidos aún</div><div class="empty-sub">Los pedidos generados aparecerán aquí</div></div>'; return; }
+  el.innerHTML = list.map(o=>`
+    <div class="order-history-card" onclick="openOrderDetail('${o.id}')">
+      <div class="order-history-top">
+        <div>
+          <div class="order-history-client">${o.client?.name||'Sin cliente'}</div>
+          <div class="order-history-date">${fmtDate(o.date)}</div>
+        </div>
+        <div class="order-history-total">${fmt(o.total)}</div>
+      </div>
+      <div class="order-history-items">${o.items.map(i=>i.name).join(' · ')}</div>
+    </div>`).join('');
+}
+
+function openOrderDetail(id) {
+  const o = orders.find(x=>x.id===id);
+  if(!o) return;
+  viewingHistoryOrder = o;
+  currentTicketOrder = o;
+  const el = document.getElementById('order-detail-content');
+  el.innerHTML = `
+    <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:500;margin-bottom:4px">${o.client?.name||'Sin cliente'}</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px">${fmtDate(o.date)} · Pedido #${o.id.slice(-6).toUpperCase()}</div>
+    ${o.items.map(i=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px">
+      <span>${i.emoji||''} ${i.name}<br><span style="font-size:11px;color:var(--text3)">${i.type==='kg'?(i.qty*1000).toFixed(0)+'g':i.qty+' pza'}</span></span>
+      <span style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--gold)">${fmt(i.subtotal)}</span>
+    </div>`).join('')}
+    <div style="text-align:right;margin-top:12px">
+      <div style="font-size:12px;color:var(--text3)">Total</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:600;color:var(--gold)">${fmt(o.total)}</div>
+    </div>
+    ${o.notes?`<div style="font-size:13px;color:var(--text2);font-style:italic;margin-top:8px">📝 ${o.notes}</div>`:''}`;
+  document.getElementById('modal-order-detail').classList.add('open');
+}
+
+function viewTicketFromHistory() {
+  const o = viewingHistoryOrder;
+  if(!o) return;
+  closeModal('modal-order-detail');
+  renderTicket(o);
+  navTo('ticket');
+}
+
+// ══════════════════════════════════════════
+// CLIENTS
+// ══════════════════════════════════════════
+function renderClients() { filterClients(); }
+function filterClients() {
+  const q = (document.getElementById('client-search')?.value||'').toLowerCase();
+  let list = [...clients];
+  if(q) list = list.filter(c=>c.name.toLowerCase().includes(q)||(c.phone||'').includes(q));
+  const el = document.getElementById('clients-list');
+  if(!list.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">Sin clientes aún</div><div class="empty-sub">Los clientes se agregan al crear pedidos</div></div>'; return; }
+  el.innerHTML = list.map(c=>`
+    <div class="client-card">
+      <div class="client-avatar">${c.name.charAt(0).toUpperCase()}</div>
+      <div style="flex:1">
+        <div class="client-name">${c.name}</div>
+        <div class="client-info">${c.phone||'Sin teléfono'} ${c.address?'· '+c.address:''}</div>
+        <div class="client-orders">${(c.orders||0)} pedido${(c.orders||0)!==1?'s':''}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════
+function loadConfig() {
+  document.getElementById('cfg-name').value = config.name||'';
+  document.getElementById('cfg-tagline').value = config.tagline||'';
+  document.getElementById('cfg-thanks').value = config.thanks||'';
+  document.getElementById('cfg-currency').value = config.currency||'$';
+  document.getElementById('cfg-phone').value = config.phone||'';
+  document.getElementById('cfg-logo').value = config.logo||'🧀';
+}
+
+function saveConfig() {
+  config = {
+    name: document.getElementById('cfg-name').value.trim()||'Lambert',
+    tagline: document.getElementById('cfg-tagline').value.trim(),
+    thanks: document.getElementById('cfg-thanks').value.trim(),
+    currency: document.getElementById('cfg-currency').value,
+    phone: document.getElementById('cfg-phone').value.trim(),
+    logo: document.getElementById('cfg-logo').value.trim()||'🧀'
+  };
+  DB.set('config', config);
+  showToast('Configuración guardada ✓');
+  refreshHome();
+}
+
+function confirmClearAll() {
+  if(!confirm('¿Eliminar TODOS los datos? Esta acción no se puede deshacer.')) return;
+  localStorage.clear();
+  location.reload();
+}
+
+// ══ EXPORT CSV ══
+function exportCSV() {
+  if(!orders.length) { showToast('Sin pedidos para exportar'); return; }
+  let csv = 'Fecha,Cliente,Teléfono,Producto,Cantidad,Precio Unit,Subtotal,Total Pedido\n';
+  orders.forEach(o=>{
+    o.items.forEach(i=>{
+      csv += [
+        new Date(o.date).toLocaleDateString('es-MX'),
+        o.client?.name||'',
+        o.client?.phone||'',
+        i.name,
+        i.type==='kg'?(i.qty*1000).toFixed(0)+'g':i.qty+' pza',
+        i.price.toFixed(2),
+        i.subtotal.toFixed(2),
+        o.total.toFixed(2)
+      ].map(v=>`"${v}"`).join(',') + '\n';
+    });
+  });
+  const blob = new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='lambert-tickets.csv'; a.click();
+  showToast('CSV exportado ✓');
+}
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function fmt(n) { return config.currency+(n||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDate(ts) {
+  const d = new Date(ts);
+  return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay=>{
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.classList.remove('open'); });
+});
+
+// ══ INIT ══
+refreshHome();
+</script>
+</body>
+</html>
